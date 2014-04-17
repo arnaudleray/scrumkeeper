@@ -7,9 +7,14 @@ Timer for daily scrum meetings.
 
 WORK IN PROGRESS!
 
+<a href="http://arnaudleray.github.io/scrumkeeper/"><img src="http://arnaudleray.github.io/scrumkeeper/images/scrumkeeper-green-mini.png" height="200px" alt="Screenshot 1"></a> &nbsp;&nbsp;&nbsp;
+<a href="http://arnaudleray.github.io/scrumkeeper/"><img src="http://arnaudleray.github.io/scrumkeeper/images/scrumkeeper-orange-mini.png" height="200px" alt="Screenshot 2"></a> &nbsp;&nbsp;&nbsp;
+<a href="http://arnaudleray.github.io/scrumkeeper/"><img src="http://arnaudleray.github.io/scrumkeeper/images/scrumkeeper-red-mini.png" height="200px" alt="Screenshot 3"></a>
+
 ## Features
 
 - 15 minutes by default
+- Colors change according to remaining time
 - Speech synthesis to inform about remaining time ([see browser compatibility](http://caniuse.com/#feat=web-speech))
 - Vector-based graphics (using [Raphael.js](http://raphaeljs.com/))
 

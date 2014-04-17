@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Scrum Timer</title>
+        <link rel="stylesheet" href="chrono.css" media="screen">
+        <script src="raphael.js"></script>
+        <script>
+            var speech;
+            var voices;
+
+            var start = function () {
+                // Init speech synthesis.
+                if (window.speechSynthesis) {
+                    speech = new SpeechSynthesisUtterance();
+                    speech.lang = 'fr-FR';
+                    voices = window.speechSynthesis.getVoices();
+                }
+
+                var r = Raphael("holder", 600, 600),
+                    R = 200,
+                    init = true,
+                    param = {stroke: "#fff", "stroke-width": 30},
+                    hash = document.location.hash,
+                    marksAttr = {fill: hash || "#FFF", stroke: "none"},
+                    t = 0,
+                    htmlMinutes = document.getElementById("m"),
+                    htmlSeconds = document.getElementById("s"),
+                    breakpoints = [
+                        { time: 10*60, msg: 'Il rest 5 minutes.', col: '#F90' },
+                        { time: 13*60, msg: 'Plus que 2 minutes.', col: '#F60' },
+                        { time: 14*60, msg: 'Plus qu\'une minute !', col: '#F00' },
+                        { time: 15*60, msg: '15 minutes !' }
+                    ];
+
+                document.getElementById('time').style.visibility = 'visible';
+
+                // Custom Attribute
+                r.customAttributes.arc = function (value, total, R) {
+                    var alpha = 360 / total * value,
+                        a = (90 - alpha) * Math.PI / 180,
+                        x = 300 + R * Math.cos(a),
+                        y = 300 - R * Math.sin(a),
+                        //color = "hsb(".concat(Math.round(R) / 200, ",", value / total, ", .75)"),
+                        path;
+                    if ((total == value) /*|| (value == 0)*/) {
+                        path = [["M", 300, 300 - R], ["A", R, R, 0, 1, 1, 299.99, 300 - R]];
+                    } else {
+                        path = [["M", 300, 300 - R], ["A", R, R, 0, +(alpha > 180), 1, x, y]];
+                    }
+                    return {path: path/*, stroke: color*/};
+                };
+
+                var centerX = r.width/2;
+                var centerY = r.height/2;
+
+                // drawMarks(R, 60);
+                param = {stroke: "#700", "stroke-width": 40};
+                var fullPath = r.path().attr(param).attr({arc: [13, 15, R]});
+                param = {stroke: "#740", "stroke-width": 40};
+                var warnPath = r.path().attr(param).attr({arc: [10, 15, R]});
+                param = {stroke: "#040", "stroke-width": 40};
+                var okPath = r.path().attr(param).attr({arc: [0, 15, R]});
+                param = {stroke: "#0f0", "stroke-width": 40};
+                var timePath = r.path().attr(param).attr({arc: [0, 60, R]});
+                // timePath.glow({color: "#FFF", width: 100, fill: '#00F'});
+                R -= 40;
+                param = {stroke: "#333", "stroke-width": 20};
+                var sec = r.path().attr(param).attr({arc: [0, 60, R]});
+                drawMarks(240, 15);
+                drawMarks(R, 60);
+
+                var line = r.rect(centerX + 175, centerY - 1, 50, 2);
+                line.attr({'fill': '#CCC', stroke: '#333'});
+                line.rotate(-90 + 360 * 10/15, centerX, centerY);
+
+                line = r.rect(centerX + 175, centerY - 1, 50, 2);
+                line.attr({'fill': '#CCC', stroke: '#333'});
+                line.rotate(-90 + 360 * 13/15, centerX, centerY);
+
+                var aiguille = r.rect(centerX - 1, centerY - 130, 2, 150);
+                aiguille.attr({'fill': '#C00', stroke: '#333'});
+                // line.rotate(-90 + 360 * 13/15, centerX, centerY);
+
+                var centerCircle = r.circle(centerX, centerY, 3);
+                centerCircle.attr({'fill': '#555', stroke: '#333'});
+
+                fullPath.animate({arc: [99.999, 100, 200]}, 1000);
+                warnPath.animate({arc: [13, 15, 200]}, 900);
+                okPath.animate({arc: [10, 15, 200]}, 900);
+
+                function padZero(value) {
+                    return (value < 10 ? "0" : "") + value;
+                }
+
+                function updateVal(value, total, R, hand, id) {
+                    if (init) {
+                        hand.animate({arc: [value, total, R]}, 900, ">");
+                    } else {
+                        if (!value || value == total) {
+                            value = total;
+                            hand.animate({arc: [value, total, R]}, 750, "bounce", function () {
+                                hand.attr({arc: [0, total, R]});
+                            });
+                        } else {
+                            hand.animate({arc: [value, total, R]}, 750, "elastic");
+                        }
+                    }
+                }
+
+                function drawMarks(R, total) {
+                    var color = "hsb(".concat(Math.round(R) / 200, ", 1, .75)"),
+                        out = r.set();
+                    for (var value = 0; value < total; value++) {
+                        var alpha = 360 / total * value,
+                            a = (90 - alpha) * Math.PI / 180,
+                            x = 300 + R * Math.cos(a),
+                            y = 300 - R * Math.sin(a);
+                        out.push(r.circle(x, y, 2).attr(marksAttr));
+                    }
+                    return out;
+                }
+
+                (function () {
+                    var d = new Date,
+                        am = (d.getHours() < 12),
+                        h = d.getHours() % 12 || 12,
+                        bp;
+
+                    updateVal(t % 60, 60, 160, sec, 2);
+
+                    // Process the next breakpoint (the first one in the breakpoints array)
+                    if (breakpoints.length > 0) {
+                        bp = breakpoints[0];
+                        if (t >= bp.time) {
+                            if (bp.col) {
+                                timePath.attr('stroke', bp.col);
+                            }
+                            if (bp.msg) {
+                                speak(bp.msg);
+                            }
+                            // Remove the first breakpoint.
+                            breakpoints.splice(0, 1);
+                        }
+                    }
+
+                    updateVal(t%(15*60), 15*60, 200, timePath, -1);
+
+                    //if (!init) {
+                        aiguille.animate({
+                            transform: ("r" + (360 * t /60) + "," + centerX + "," + centerY)
+                        }, 750, "elastic");
+                    //}
+
+                    htmlMinutes.innerHTML = padZero(Math.floor(t/60));
+                    htmlSeconds.innerHTML = padZero(t%60);
+
+                    t = t + 1;
+                
+                    setTimeout(arguments.callee, 1000);
+                    init = false;
+                })();
+            };
+
+            // Synthèse vocale
+            function speak(msg) {
+                setTimeout(function() {
+                    try {
+                        if (window.speechSynthesis) {
+                            /*var speech = new SpeechSynthesisUtterance(msg);
+                            speech.lang = 'fr-FR';
+                            var voices = window.speechSynthesis.getVoices();*/
+                            // speech.volume = 1;
+                            speech.text = msg;
+                            window.speechSynthesis.speak(speech);
+                            // setTimeout(function() { window.speechSynthesis.speak(speech); }, 2000);
+                        } else {
+                            if (console && console.log) {
+                                console.log('Speech synthesis not available on your browser.');
+                            }
+                        }
+                    } catch (ex) { }
+                }, 100);
+            }
+
+
+            // Reconnaissance vocale
+function showInfo(s) {
+  if (s) {
+    alert(s);
+  }
+}
+ var recognition,
+     ignore_onend,
+     recognizing,
+     final_transcript = '';
+            if (!('webkitSpeechRecognition' in window)) {
+                if (console && console.log) {
+                    console.log('Speech recognition not available on your browser.');
+                }
+            } else {
+  recognition = new webkitSpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'fr-FR';//select_dialect.value;
+  //recognition.start();
+
+  recognition.onstart = function() {
+    recognizing = true;
+    //showInfo('info_speak_now');
+    //start_img.src = 'https://www.google.com/intl/en/chrome/assets/common/images/content/mic-animate.gif';
+  };
+
+  recognition.onerror = function(event) {
+    /*if (event.error == 'no-speech') {
+      start_img.src = 'https://www.google.com/intl/en/chrome/assets/common/images/content/mic.gif';
+      showInfo('info_no_speech');
+      ignore_onend = true;
+    }
+    if (event.error == 'audio-capture') {
+      start_img.src = 'https://www.google.com/intl/en/chrome/assets/common/images/content/mic.gif';
+      showInfo('info_no_microphone');
+      ignore_onend = true;
+    }
+    if (event.error == 'not-allowed') {
+      if (event.timeStamp - start_timestamp < 100) {
+        showInfo('info_blocked');
+      } else {
+        showInfo('info_denied');
+      }
+      ignore_onend = true;
+    }*/
+    ignore_onend = true;
+  };
+
+  recognition.onend = function() {
+    recognizing = false;
+    if (ignore_onend) {
+      return;
+    }
+    //start_img.src = 'https://www.google.com/intl/en/chrome/assets/common/images/content/mic.gif';
+    if (!final_transcript) {
+      showInfo('info_start');
+      return;
+    }
+    showInfo('');
+  };
+
+  recognition.onresult = function(event) {
+    var interim_transcript = '';
+    if (typeof(event.results) == 'undefined') {
+      recognition.onend = null;
+      recognition.stop();
+      showInfo('info_upgrade');
+      return;
+    }
+    for (var i = event.resultIndex; i < event.results.length; ++i) {
+      /*if (event.results[i].isFinal) {
+        final_transcript += event.results[i][0].transcript;
+      } else {
+        interim_transcript += event.results[i][0].transcript;
+      }*/
+      alert(event.results[i][0].transcript);
+    }
+    /*final_transcript = capitalize(final_transcript);
+    final_span.innerHTML = linebreak(final_transcript);
+    interim_span.innerHTML = linebreak(interim_transcript);
+    if (final_transcript || interim_transcript) {
+      showButtons('inline-block');
+    }*/
+  };
+}
+        </script>
+    </head>
+    <body>
+        <div id="holder"></div>
+        <div id="time" style="visibility: hidden;">
+            <span id="m"></span>:<span id="s"></span>
+        </div>
+        <div style="position: absolute; right: 1em;">
+            <button id="btnStart" class="start" onclick="start()">Start</button>
+        </div>
+        <script>
+            document.getElementById('btnStart').focus();
+        </script>
+    </body>
+</html>

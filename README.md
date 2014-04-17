@@ -7,6 +7,8 @@ Timer for daily scrum meetings.
 
 WORK IN PROGRESS!
 
+## Screenshots
+
 <a href="http://arnaudleray.github.io/scrumkeeper/"><img src="http://arnaudleray.github.io/scrumkeeper/images/scrumkeeper-green-mini.png" height="200px" alt="Screenshot 1"></a> &nbsp;&nbsp;&nbsp;
 <a href="http://arnaudleray.github.io/scrumkeeper/"><img src="http://arnaudleray.github.io/scrumkeeper/images/scrumkeeper-orange-mini.png" height="200px" alt="Screenshot 2"></a> &nbsp;&nbsp;&nbsp;
 <a href="http://arnaudleray.github.io/scrumkeeper/"><img src="http://arnaudleray.github.io/scrumkeeper/images/scrumkeeper-red-mini.png" height="200px" alt="Screenshot 3"></a>

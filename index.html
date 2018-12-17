@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <title>ScrumKeeper - Timer for Daily Scrum meetings</title>
         <link rel="stylesheet" href="scrumkeeper.css" media="screen">
-        <script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.2/raphael-min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.2/raphael-min.js"></script>
         <script>
             var speech;
             var voices;
@@ -156,7 +156,7 @@
                     htmlSeconds.innerHTML = padZero(t%60);
 
                     t = t + 1;
-                
+
                     setTimeout(arguments.callee, 1000);
                     init = false;
                 })();
